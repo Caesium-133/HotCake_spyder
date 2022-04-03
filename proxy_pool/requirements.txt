@@ -1,0 +1,8 @@
+APScheduler
+werkzeug
+Flask
+requests
+click==7.0
+gunicorn
+lxml
+redis
