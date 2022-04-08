@@ -33,7 +33,7 @@ def getBestSellersByAll():
     url = "http://corners.gmarket.co.kr/Bestsellers"
 
     webData = getHtml(url)
-    soup = BeautifulSoup(webData.text, "lxml")
+    soup = BeautifulSoup(webData, "lxml")
 
     # driver = webdriver.Chrome()
     # driver.get(url)
@@ -111,7 +111,7 @@ def getBestSellersByEachCat():
         time.sleep(wait_time / 2)
         url = f"http://corners.gmarket.co.kr/Bestsellers?viewType=C&largeCategoryCode={lcc[0]}"
         webData = getHtml(url)
-        soup = BeautifulSoup(webData.text, "lxml")
+        soup = BeautifulSoup(webData, "lxml")
 
         if isDebug:
             logging.info("got web data")

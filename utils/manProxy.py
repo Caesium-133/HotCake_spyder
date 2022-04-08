@@ -3,6 +3,12 @@ import utils.gParas
 from utils.MyException import NoRespondException
 import logging
 import time
+import re
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+
 
 
 def get_proxy():
@@ -50,12 +56,37 @@ def delete_proxy(proxy):
 #         logging.warning("no proxy valid")
 #     return requests.post(url=url, data=data, headers=headers)
 
+def checkHtml(webdata:str):
+    index=webdata.find("<meta name=\"robots\" content=\"noindex\">")
+    if index>-1:
+        return None
+    return webdata
 
 def getHtml(url):
     time.sleep(utils.gParas.wait_time)
-    return requests.get(url, headers=utils.gParas.headers, timeout=5)
+    webdata = requests.get(url=url,headers=utils.gParas.headers, timeout=5)
+    redirectUrl = re.findall(r"document.location.replace\(\".*?\"\);", webdata.text)
+    if redirectUrl:
+        url=redirectUrl[0].split("\"")[1]
+        options = webdriver.ChromeOptions()
+        options.headless = True
+        driver = webdriver.Chrome(options=options)
+        wait = WebDriverWait(driver, 10)
+        driver.get(url)
+        wait.until(
+            EC.presence_of_all_elements_located((By.ID, "header"))
+        )
+        data = driver.page_source
+        
+        return check(data)
+    return checkHtml(webdata.text) if webdata else None
 
 
 def postHtml(url, data, headers=None):
     time.sleep(utils.gParas.wait_time)
-    return requests.post(url=url, data=data, headers=headers, timeout=5)
+    webdata = requests.post(url=url,data=data, headers=headers, timeout=5)
+    redirectUrl = re.findall(r"document.location.replace\(\".*?\"\);", webdata.text)
+    if redirectUrl:
+        url = redirectUrl[0].split("\"")[1]
+    webdata = requests.post(url=url, data=data, headers=headers, timeout=5)
+    return checkHtml(webdata.text) if webdata else None
