@@ -7,6 +7,7 @@ import time
 from utils.utility import makeDir
 from crawler.getItemInfo import getItemInfo
 from utils.itemsDict import itemInfoDict
+#from utils.MyException import NoRespondException, UnableToDealException, WeNeedCheckException, RetryMayWorkException
 
 if __name__ == "__main__":
     makeDir("./log/itemInfo")
@@ -21,7 +22,7 @@ if __name__ == "__main__":
         database="spyder"
     )
     mycursor = mydb.cursor()
-    querySql="SELECT DISTINCT goodsCode FROM allGoodsCode"
+    querySql="SELECT DISTINCT goodsCode FROM allGoodsCode ORDER BY id desc"
 
     mycursor.execute(querySql)
     gcs=mycursor.fetchall()
@@ -33,7 +34,11 @@ if __name__ == "__main__":
     for gct in gcs:
         goodsCode=gct[0]
         itemInfo=itemInfoDict.copy()
-        getItemInfo(goodsCode=goodsCode,itemInfo=itemInfo)
+        try:
+            getItemInfo(goodsCode=goodsCode,itemInfo=itemInfo)
+        except Exception as e:
+            print(goodsCode+ "meets error:")
+            raise e
 
         val=tuple(itemInfo.values())
 
@@ -43,4 +48,4 @@ if __name__ == "__main__":
     mydb.close()
 
     
-
+# https://gtour.gmarket.co.kr/TourV2/Item?GoodsCode=1769279748

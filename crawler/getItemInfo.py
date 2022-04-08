@@ -3,7 +3,7 @@ import time
 from bs4 import BeautifulSoup
 import requests
 import logging
-from utils.MyException import NoRespondException, UnableToDealException
+from utils.MyException import NoRespondException, UnableToDealException, WeNeedCheckException, RetryMayWorkException
 from utils.utility import getItemInfoString
 import json
 from utils.gParas import wait_time, itemUrl, wait_time_update,isDebug
@@ -44,7 +44,19 @@ def getItemSummary(goodsCode,itemInfoSDict):
         coupon = coupon.get_text().split("%")[0]
     except:
         coupon = 0
-    itemInfo["coupon"] = float(float(coupon) / 100)
+    
+    p_coupon=None
+    try:
+        p_coupon=float(float(coupon) / 100)
+    except:
+        try:
+            n_coupon=coupon.get_text().split("원")[0]
+            p_coupon=float(float(coupon) / float(itemInfo["realPrice"]))
+        except:
+            raise WeNeedCheckException(f"error:{goodsCode}'s coupon")
+    finally:
+        itemInfo["coupon"] = p_coupon
+    
     try:
         reviewInfo = downloadItemReviews(goodsCode=goodsCode, needCommon=False, needPremium=False)
         itemInfo["reviewsNum"] = reviewInfo["totalCount"]
@@ -75,15 +87,14 @@ def getItemInfo(goodsCode, itemInfo):
     if navi is None:
         logging.error(f"no navi bar for {goodsCode}")
         raise UnableToDealException("noNaviBar")
-    cats = navi.find_all("li")
+    cats = navi.select("li")
     i = 0
     for cat in cats:
         catName = cat.find("a")
         itemInfo[f"cat_{i}"] = catName.text.replace(",", "/") if catName else None
-        if i>1:
+        if catName and i>1:
             catLink=catName.get("href")
             catCode=catLink.split("=")[-1]
-            print(catCode)
             itemInfo[f"cat_{i}_code"]=catCode
         i += 1
 
@@ -116,7 +127,16 @@ def getItemInfo(goodsCode, itemInfo):
         coupon = coupon.get_text().split("%")[0]
     except:
         coupon = 0
-    itemInfo["coupon"] = float(float(coupon) / 100)
+        
+    p_coupon=None
+    try:
+        p_coupon=float(float(coupon) / 100)
+    except:
+        n_coupon=coupon.get_text().split("원")[0].replace(",","")
+        p_coupon=float(float(coupon) / float(itemInfo["realPrice"]))
+    finally:
+        itemInfo["coupon"] = p_coupon
+            
 
     getShopInfoJS = soup.select_one("div.vip-tabcontentwrap > script")
     getShopInfoJS = getShopInfoJS.text
@@ -171,9 +191,9 @@ def getItemInfo(goodsCode, itemInfo):
                     elif rowText == "크기/중량":
                         if tr.td.get_text():
                             s = tr.td.get_text()
-                            slash = tr.td.get_text().index("/")
+                            slash = tr.td.get_text().find("/")
                             if slash != -1 and slash < len(tr.td.get_text()):
-                                if s.index("m") < slash < s.index("g"):
+                                if s.find("m") < slash < s.find("g"):
                                     itemInfo["size"] = tr.td.get_text().split("/")[0].strip(" ")
                                     itemInfo["weight"] = tr.td.get_text().split("/")[1].strip(" ")
                     elif rowText == "색상":

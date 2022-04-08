@@ -16,11 +16,12 @@ if __name__ == "__main__":
     LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
     logging.basicConfig(filename=f"./log/bs/logging{date}.log", format=LOG_FORMAT, level=logging.INFO)
 
-    try:
-        getBestSellersByAll()
-    except Exception as e:
-        logging.error("error: ")
-        raise e
+    # try:
+    #     getBestSellersByAll()
+    # except Exception as e:
+    #     logging.error("error: ")
+    #     raise e
+    getBestSellersByAll()
 
 
 

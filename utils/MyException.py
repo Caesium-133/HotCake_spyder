@@ -9,10 +9,10 @@ class UnableToDealException(Exception):
 
 
 class WeNeedCheckException(Exception):
-    def __init__(self, what):
-        self.what= what
+    def __init__(self, who):
+        self.who= who
 
 
 class RetryMayWorkException(Exception):
-    def __init__(self,what):
-        self.what=what
+    def __init__(self, who):
+        self.who=who

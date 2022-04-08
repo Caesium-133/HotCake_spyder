@@ -3,7 +3,7 @@ wait_time_update = 0.5
 
 retry_times=5
 
-isDebug=True
+isDebug=False
 
 headers = {
     # "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36",
