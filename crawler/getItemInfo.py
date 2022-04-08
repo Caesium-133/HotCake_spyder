@@ -26,7 +26,7 @@ def getItemSummary(goodsCode,itemInfoSDict):
     if webData is None:
         logging.error(f"no info respond for {goodsCode}")
         raise NoRespondException("InfoPage")
-    soup = BeautifulSoup(webData.text, 'lxml')
+    soup = BeautifulSoup(webData, 'lxml')
 
     realPrice = soup.select_one("strong.price_real")
     if realPrice:
@@ -50,8 +50,8 @@ def getItemSummary(goodsCode,itemInfoSDict):
         p_coupon=float(float(coupon) / 100)
     except:
         try:
-            n_coupon=coupon.get_text().split("원")[0]
-            p_coupon=float(float(coupon) / float(itemInfo["realPrice"]))
+            n_coupon=coupon.split("원")[0]
+            p_coupon=float(float(n_coupon) / float(itemInfo["realPrice"]))
         except:
             raise WeNeedCheckException(f"error:{goodsCode}'s coupon")
     finally:
@@ -78,7 +78,7 @@ def getItemInfo(goodsCode, itemInfo):
     if webData is None:
         logging.error(f"no info respond for {goodsCode}")
         raise NoRespondException("InfoPage")
-    soup = BeautifulSoup(webData.text, 'lxml')
+    soup = BeautifulSoup(webData, 'lxml')
 
     title = soup.select_one("div.box__item-title")
     itemInfo["title"] = title.h1.text.replace(",", " ") if title else None
@@ -132,8 +132,8 @@ def getItemInfo(goodsCode, itemInfo):
     try:
         p_coupon=float(float(coupon) / 100)
     except:
-        n_coupon=coupon.get_text().split("원")[0].replace(",","")
-        p_coupon=float(float(coupon) / float(itemInfo["realPrice"]))
+        n_coupon=coupon.split("원")[0].replace(",","")
+        p_coupon=float(float(n_coupon) / float(itemInfo["realPrice"]))
     finally:
         itemInfo["coupon"] = p_coupon
             
@@ -146,7 +146,7 @@ def getItemInfo(goodsCode, itemInfo):
     #sib = requests.post(url="http://item.gmarket.co.kr/Shop/ShopInfo", data=getSIpayload)
     # with open("test.html","w",encoding="utf-8") as file:
     #     file.write(sib.text)
-    sibSoup = BeautifulSoup(sib.text, 'lxml')
+    sibSoup = BeautifulSoup(sib, 'lxml')
 
     shopInfoBox = sibSoup.select_one("div.shop-infobox")
     if shopInfoBox is None:

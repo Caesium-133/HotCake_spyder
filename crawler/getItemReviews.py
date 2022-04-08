@@ -35,7 +35,7 @@ def downloadItemReviews(goodsCode, needPremium=True, needCommon=True, alreadyPre
         logging.error(f"no review respond for {goodsCode}")
         raise NoRespondException("reviewRespond")
 
-    soup = BeautifulSoup(reviewRespond.text, 'lxml')
+    soup = BeautifulSoup(reviewRespond, 'lxml')
 
     totalCount = soup.find_all("script", type="text/javascript")
     totalCount = int(totalCount[-1].text.split("=")[-1].replace(" ", "").replace(";", "")) if totalCount else 0
@@ -146,7 +146,7 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
     numThisTime = 0
 
     while premiumPage:
-        soup = BeautifulSoup(premiumPage.text, 'lxml')
+        soup = BeautifulSoup(premiumPage, 'lxml')
         reviewsDictList = []
         ReviewTable = soup.find("table", class_="tb_premium")
 
@@ -256,7 +256,7 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
     numThisTime = 0
 
     while commonPage:
-        soup = BeautifulSoup(commonPage.text, 'lxml')
+        soup = BeautifulSoup(commonPage, 'lxml')
         reviewsDictList = []
         ReviewTable = soup.find("table", class_="tb_comment_common")
 

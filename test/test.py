@@ -1,30 +1,40 @@
 import json
 import re
+import time
+
 import utils.gParas
 from bs4 import BeautifulSoup
 import requests
 import json
 import mysql.connector
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
-mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="123456",
-        database="temp"
-    )
+url = utils.gParas.itemUrl + "1769279748"
+options=webdriver.ChromeOptions()
+options.headless=True
+webdata = requests.get(url=url, timeout=5)
+redirectUrl = re.findall(r"document.location.replace\(\".*?\"\);", webdata.text)
+url=redirectUrl[0].split("\"")[1]
+driver=webdriver.Chrome(options=options)
+wait=WebDriverWait(driver,10)
 
-mycursor = mydb.cursor()
-gccursor=mydb.cursor()
-limitsql=f" limit {utils.gParas.updateItemNumOnceOfInfo}" if utils.gParas.updateItemNumOnceOfInfo!=0 else ""
-querySql="select val from fetchone order by id desc "+limitsql
+driver.get(url)
+wait.until(
+    EC.presence_of_all_elements_located((By.ID,"header"))
+)
+data=driver.page_source
+# webdata = requests.get(url=url, timeout=5)
+# while redirectUrl:
+#     url = redirectUrl[0].split("\"")[1]
+#     print(url)
+#     webdata = requests.get(url=url, timeout=5)
+#     redirectUrl = re.findall(r"document.location.replace\(\".*?\"\);", webdata.text)
 
-gccursor.execute(querySql)
-val=gccursor.fetchone()     # tuple
-while(val):
-    print(val[0])
-    mycursor.execute("select * from pk_test limit 1")
-    pk=mycursor.fetchone()
-    print(pk[0])
-    val = gccursor.fetchone()
+with open("test.html","w+",encoding="utf-8") as file:
+    file.write(data)
 
+driver.quit()
 
