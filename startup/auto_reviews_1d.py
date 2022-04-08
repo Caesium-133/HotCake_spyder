@@ -7,7 +7,8 @@ import time
 from utils.utility import makeDir
 from crawler.getItemReviews import downloadItemReviews
 import mysql.connector
-from utils.gParas import mysqlParas, shallowCRp,shallowPRp
+from utils.gParas import mysqlParas, shallowCRp,shallowPRp,updateItemNumOnceOfReviews
+
 
 isDebug=False
 
@@ -26,8 +27,9 @@ if __name__ == "__main__":
         database="spyder"
     )
     mycursor = mydb.cursor()
-    gcSql = "SELECT goodsCode FROM allGoodsCode"
-    mycursor.execute(gcSql)
+    limitsql = f" limit {updateItemNumOnceOfReviews}" if updateItemNumOnceOfReviews != 0 else ""
+    querySql = "SELECT DISTINCT goodsCode FROM allGoodsCode ORDER BY id desc" + limitsql
+    mycursor.execute(querySql)
     gcs = mycursor.fetchall()  # gcs is a list of tuples
 
     for gct in gcs:

@@ -7,7 +7,7 @@ import time
 from utils.utility import makeDir
 from crawler.getItemInfo import getItemInfo
 from utils.itemsDict import itemInfoDict
-#from utils.MyException import NoRespondException, UnableToDealException, WeNeedCheckException, RetryMayWorkException
+import utils.gParas
 
 if __name__ == "__main__":
     makeDir("./log/itemInfo")
@@ -22,17 +22,17 @@ if __name__ == "__main__":
         database="spyder"
     )
     mycursor = mydb.cursor()
+    limitsql = f" limit {utils.gParas.updateItemNumOnceOfInfo}" if utils.gParas.updateItemNumOnceOfInfo != 0 else ""
     querySql="SELECT DISTINCT goodsCode FROM allGoodsCode ORDER BY id desc"
+    insertSql = "INSERT INTO itemInfo VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s," \
+                "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s," \
+                "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s," \
+                "%s,%s,%s,%s,%s)"
 
     mycursor.execute(querySql)
-    gcs=mycursor.fetchall()
-
-    insertSql = "INSERT INTO itemInfo VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s," \
-                                            "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s," \
-                                            "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s," \
-                                            "%s,%s,%s,%s,%s)"
-    for gct in gcs:
-        goodsCode=gct[0]
+    gc=mycursor.fetchone()
+    while(gc):
+        goodsCode=gc[0]
         itemInfo=itemInfoDict.copy()
         try:
             getItemInfo(goodsCode=goodsCode,itemInfo=itemInfo)
@@ -45,6 +45,7 @@ if __name__ == "__main__":
         logging.info(f"inserting {goodsCode}'s")
         mycursor.execute(insertSql,val)
         mydb.commit()
+        gc = mycursor.fetchone()
     mydb.close()
 
     

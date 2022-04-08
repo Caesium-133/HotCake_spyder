@@ -3,6 +3,7 @@ import utils.gParas
 from utils.MyException import NoRespondException
 import logging
 import time
+import re
 
 
 def get_proxy():
@@ -53,9 +54,21 @@ def delete_proxy(proxy):
 
 def getHtml(url):
     time.sleep(utils.gParas.wait_time)
+    webdata = requests.get(url=url,timeout=5)
+    redirectUrl = re.findall(r"document.location.replace\(\".*?\"\);", webdata.text)
+    while redirectUrl:
+        url=redirectUrl[0].split("\"")[1]
+        webdata = requests.get(url=url,timeout=5)
+        redirectUrl = re.findall(r"document.location.replace\(\".*?\"\);", webdata.text)
     return requests.get(url, headers=utils.gParas.headers, timeout=5)
 
 
 def postHtml(url, data, headers=None):
     time.sleep(utils.gParas.wait_time)
+    webdata = requests.get(url=url,data=data, headers=headers, timeout=5)
+    redirectUrl = re.findall(r"document.location.replace\(\".*?\"\);", webdata.text)
+    while redirectUrl:
+        url = redirectUrl[0].split("\"")[1]
+        webdata = requests.get(url=url, data=data, headers=headers, timeout=5)
+        redirectUrl = re.findall(r"document.location.replace\(\".*?\"\);", webdata.text)
     return requests.post(url=url, data=data, headers=headers, timeout=5)
