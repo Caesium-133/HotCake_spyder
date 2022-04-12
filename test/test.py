@@ -11,9 +11,12 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+import time
+from utils.manProxy import postHtml
 
-url = utils.gParas.itemUrl + "2187712609"
-webdata=requests.get(url)
+from utils.utility import getMostRecentlyUpdatedMeasurement
+
+premiumPage = postHtml(url="http://item.gmarket.co.kr/Review", data={"goodsCode": "2268968816"},
+                           headers=utils.gParas.headers)
 with open("test.html","w+",encoding="utf-8") as file:
-    file.write(webdata.text)
-
+    file.write(premiumPage)

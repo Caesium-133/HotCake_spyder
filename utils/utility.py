@@ -1,4 +1,9 @@
 import re
+import influxdb
+from utils.gParas import influxParas
+import json
+import time
+from tqdm import tqdm
 
 
 def getReviewGrade(reviewGrade):
@@ -47,3 +52,24 @@ def makeDir(path):
     except:
         return False
 
+
+def getMostRecentlyUpdatedMeasurement():
+    influxClient = influxdb.InfluxDBClient(
+        host=influxParas["host"],
+        username=influxParas["user"],
+        password=influxParas["password"],
+        database="ItemSummaries"
+    )
+    gcms=influxClient.get_list_measurements()
+    foundLastTime=""
+    foundLastGC=""
+    for gcm in gcms:
+        measurement=gcm["name"]
+        goodsCode=measurement.split("c")[-1]
+        lastTime=influxClient.query(f"select last(goodsCode), time from {measurement}")
+        lastTimeRaw=lastTime.raw
+        lt=lastTimeRaw["series"][0]["values"][0][0]
+        if lt>foundLastTime:
+            foundLastTime=lt
+            foundLastGC=goodsCode
+    return foundLastGC

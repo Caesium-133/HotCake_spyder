@@ -3,26 +3,29 @@ import time
 from bs4 import BeautifulSoup
 import requests
 import logging
-from utils.MyException import NoRespondException, UnableToDealException, WeNeedCheckException, RetryMayWorkException
+from utils.MyException import NoRespondException, RetryMayWorkException, WeNeedCheckException, UnWantedGSException
 from utils.utility import getItemInfoString
 import json
-from utils.gParas import wait_time, itemUrl, wait_time_update,isDebug
+from utils.gParas import wait_time, itemUrl, wait_time_update, isDebug, isTour, isNoItem
 from crawler.getItemReviews import downloadItemReviews
-from utils.manProxy import getHtml,postHtml
+from utils.manProxy import getHtml, postHtml
 from utils.MyDecoration import debug
+from retry import retry
 
-debugMethod="time"
+
+debugMethod = "time"
 
 
-@debug(isDebug=isDebug,method=debugMethod)
-def getItemSummary(goodsCode,itemInfoSDict):
+@debug(isDebug=isDebug, method=debugMethod)
+def getItemSummary(goodsCode, itemInfoSDict):
     itemInfo = itemInfoSDict
-    time.sleep(wait_time_update)
     logging.info(f"getting {goodsCode}'s info")
     url = itemUrl + f"{goodsCode}"
     itemInfo["goodsCode"] = goodsCode
 
     webData = getHtml(url)
+    if webData == isTour or webData == isNoItem:
+        raise UnWantedGSException
     if webData is None:
         logging.error(f"no info respond for {goodsCode}")
         raise NoRespondException("InfoPage")
@@ -44,19 +47,25 @@ def getItemSummary(goodsCode,itemInfoSDict):
         coupon = coupon.get_text().split("%")[0]
     except:
         coupon = 0
-    
-    p_coupon=None
+
+    p_coupon = None
     try:
-        p_coupon=float(float(coupon) / 100)
+        p_coupon = float(float(coupon) / 100)
     except:
+        n_coupon = coupon.split("원")[0].replace(",", "")
         try:
-            n_coupon=coupon.split("원")[0]
-            p_coupon=float(float(n_coupon) / float(itemInfo["realPrice"]))
+            p_coupon = float(float(n_coupon) / float(itemInfo["price"])) if itemInfo["price"] else float(
+                n_coupon)
         except:
-            raise WeNeedCheckException(f"error:{goodsCode}'s coupon")
+            wan = n_coupon.find("만")
+            if wan > -1:
+                p_coupon = float(n_coupon.split("만")[0]) * 10000
+                p_coupon = float(p_coupon / float(itemInfo["price"])) if itemInfo["price"] else float(p_coupon)
+            else:
+                logging.warning(f"{goodsCode}'s coupon not the format")
     finally:
         itemInfo["coupon"] = p_coupon
-    
+
     try:
         reviewInfo = downloadItemReviews(goodsCode=goodsCode, needCommon=False, needPremium=False)
         itemInfo["reviewsNum"] = reviewInfo["totalCount"]
@@ -65,16 +74,20 @@ def getItemSummary(goodsCode,itemInfoSDict):
     except:
         logging.warning(f"unfulfilled item summary of {goodsCode}")
 
-@debug(isDebug=isDebug,method=debugMethod)
+
+@debug(isDebug=isDebug, method=debugMethod)
+@retry(exceptions=(NoRespondException, RetryMayWorkException), tries=3, delay=2, jitter=(3, 4))
 def getItemInfo(goodsCode, itemInfo):
     time.sleep(wait_time / 2)
     logging.info(f"getting {goodsCode}'s info")
     url = itemUrl + f"{goodsCode}"
 
     itemInfo["goodsCode"] = goodsCode
-    itemInfo["updateDate"]=time.strftime("%Y-%m-%d", time.localtime())
+    itemInfo["updateDate"] = time.strftime("%Y-%m-%d", time.localtime())
 
     webData = getHtml(url)
+    if webData == isTour or webData == isNoItem:
+        raise UnWantedGSException
     if webData is None:
         logging.error(f"no info respond for {goodsCode}")
         raise NoRespondException("InfoPage")
@@ -86,16 +99,16 @@ def getItemInfo(goodsCode, itemInfo):
     navi = soup.find("div", class_="location-navi")
     if navi is None:
         logging.error(f"no navi bar for {goodsCode}")
-        raise UnableToDealException("noNaviBar")
+        raise WeNeedCheckException("noNaviBar")
     cats = navi.select("li")
     i = 0
     for cat in cats:
         catName = cat.find("a")
         itemInfo[f"cat_{i}"] = catName.text.replace(",", "/") if catName else None
-        if catName and i>1:
-            catLink=catName.get("href")
-            catCode=catLink.split("=")[-1]
-            itemInfo[f"cat_{i}_code"]=catCode
+        if catName and i > 1:
+            catLink = catName.get("href")
+            catCode = catLink.split("=")[-1]
+            itemInfo[f"cat_{i}_code"] = catCode
         i += 1
 
     isBest = True if soup.select_one("span.box__category-best") else False
@@ -127,25 +140,35 @@ def getItemInfo(goodsCode, itemInfo):
         coupon = coupon.get_text().split("%")[0]
     except:
         coupon = 0
-        
-    p_coupon=None
+
+    p_coupon = None
     try:
-        p_coupon=float(float(coupon) / 100)
+        p_coupon = float(float(coupon) / 100)
     except:
-        n_coupon=coupon.split("원")[0].replace(",","")
-        p_coupon=float(float(n_coupon) / float(itemInfo["realPrice"]))
+        n_coupon = coupon.split("원")[0].replace(",", "")
+        try:
+            p_coupon = float(float(n_coupon) / float(itemInfo["realPrice"])) if itemInfo["realPrice"] else float(
+                n_coupon)
+        except:
+            wan = n_coupon.find("만")
+            if wan > -1:
+                p_coupon = float(n_coupon.split("만")[0]) * 10000
+                p_coupon = float(p_coupon / float(itemInfo["realPrice"])) if itemInfo["realPrice"] else float(p_coupon)
+            else:
+                float(n_coupon)  # TODO shandiao
     finally:
         itemInfo["coupon"] = p_coupon
-            
 
     getShopInfoJS = soup.select_one("div.vip-tabcontentwrap > script")
     getShopInfoJS = getShopInfoJS.text
     getSIpayload = re.findall("{.*}", getShopInfoJS)[0]
     getSIpayload = json.loads(getSIpayload)
-    sib=postHtml(url="http://item.gmarket.co.kr/Shop/ShopInfo", data=getSIpayload)
-    #sib = requests.post(url="http://item.gmarket.co.kr/Shop/ShopInfo", data=getSIpayload)
+    sib = postHtml(url="http://item.gmarket.co.kr/Shop/ShopInfo", data=getSIpayload)
+    # sib = requests.post(url="http://item.gmarket.co.kr/Shop/ShopInfo", data=getSIpayload)
     # with open("test.html","w",encoding="utf-8") as file:
     #     file.write(sib.text)
+    if sib == isTour or sib == isNoItem:
+        raise UnWantedGSException
     sibSoup = BeautifulSoup(sib, 'lxml')
 
     shopInfoBox = sibSoup.select_one("div.shop-infobox")

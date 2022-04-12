@@ -31,6 +31,9 @@ def downloadItemReviews(goodsCode, needPremium=True, needCommon=True, alreadyPre
 
     reviewRespond = postHtml(url="http://item.gmarket.co.kr/Review", data=getReviewsPayload, headers=utils.gParas.headers)
     # reviewRespond = requests.post(url="http://item.gmarket.co.kr/Review", data=getReviewsPayload,headers=gParas.headers)
+    if reviewRespond == utils.gParas.isTour or reviewRespond == utils.gParas.isNoItem:
+        raise UnWantedGSException
+
     if reviewRespond is None:
         logging.error(f"no review respond for {goodsCode}")
         raise NoRespondException("reviewRespond")
@@ -71,35 +74,43 @@ def downloadItemReviews(goodsCode, needPremium=True, needCommon=True, alreadyPre
     CommonReviewsPerPage = len(tds)
 
     if needPremium:
-        try:
-            pt = threading.Thread(target=downloadPremiumReview, args=(
-                goodsCode, premiumReviewNum, PremiumReviewsPerPage, int(premiumReviewNum - alreadyPre) + 1, hmPRp))
-            # downloadPremiumReview(goodsCode=goodsCode, totalNum=premiumReviewNum, numPerPage=PremiumReviewsPerPage,update=int(premiumReviewNum-alreadyPre)+1)
-            pt.start()
-        except UnableToDealException:
-            logging.warning(f"unable to deal something when downloading {goodsCode}'s premium reviews")
-        except NoRespondException:
-            raise UnableToDealException("NoRespond4PremiumReviews")
-        except IOError:
-            raise WeNeedCheckException("writePremiumReviews")
-        except threading.ThreadError:
-            raise WeNeedCheckException("thread error")
-        except:
-            print("error")
+        if premiumReviewNum==0:
+            logging.info(f"{goodsCode} has no pr reviews")
+        else:
+            try:
+                pt = threading.Thread(target=downloadPremiumReview, args=(
+                    goodsCode, premiumReviewNum, PremiumReviewsPerPage, int(premiumReviewNum - alreadyPre) + 1, hmPRp))
+                # downloadPremiumReview(goodsCode=goodsCode, totalNum=premiumReviewNum, numPerPage=PremiumReviewsPerPage,update=int(premiumReviewNum-alreadyPre)+1)
+                pt.start()
+            except UnableToDealException:
+                logging.warning(f"unable to deal something when downloading {goodsCode}'s premium reviews")
+            except NoRespondException:
+                raise UnableToDealException("NoRespond4PremiumReviews")
+            except IOError:
+                raise WeNeedCheckException("writePremiumReviews")
+            except threading.ThreadError:
+                raise WeNeedCheckException("thread error")
+            except Exception as e:
+                raise e
     if needCommon:
-        try:
-            ct = threading.Thread(target=downloadCommonReviews, args=(
-                goodsCode, commonReviewNum, CommonReviewsPerPage, int(commonReviewNum - alreadyCom) + 1, hmCRp))
-            # downloadCommonReviews(goodsCode=goodsCode,totalNum=commonReviewNum,numPerPage=CommonReviewsPerPage,update=int(commonReviewNum-alreadyCom)+1)
-            ct.start()
-        except UnableToDealException:
-            logging.warning(f"unable to deal something when downloading {goodsCode}'s common reviews")
-        except NoRespondException:
-            raise UnableToDealException("NoRespond4CommonReviews")
-        except IOError:
-            raise WeNeedCheckException("writeCommonReviews")
-        except threading.ThreadError:
-            raise WeNeedCheckException("thread error")
+        if commonReview == 0:
+            logging.info(f"{goodsCode} has no cm reviews")
+        else:
+            try:
+                ct = threading.Thread(target=downloadCommonReviews, args=(
+                    goodsCode, commonReviewNum, CommonReviewsPerPage, int(commonReviewNum - alreadyCom) + 1, hmCRp))
+                # downloadCommonReviews(goodsCode=goodsCode,totalNum=commonReviewNum,numPerPage=CommonReviewsPerPage,update=int(commonReviewNum-alreadyCom)+1)
+                ct.start()
+            except UnableToDealException:
+                logging.warning(f"unable to deal something when downloading {goodsCode}'s common reviews")
+            except NoRespondException:
+                raise UnableToDealException("NoRespond4CommonReviews")
+            except IOError:
+                raise WeNeedCheckException("writeCommonReviews")
+            except threading.ThreadError:
+                raise WeNeedCheckException("thread error")
+            except Exception as e:
+                raise e
 
     return itemReviews
 
@@ -138,6 +149,9 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
     page = 1
     premiumPage = postHtml(url="http://item.gmarket.co.kr/Review", data={"goodsCode": f"{goodsCode}"},
                            headers=utils.gParas.headers)
+
+    if premiumPage == utils.gParas.isTour or premiumPage == utils.gParas.isNoItem:
+        raise UnWantedGSException
 
     if premiumPage is None:
         logging.error(f"no respond for {goodsCode}'s premium page")
@@ -196,9 +210,11 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
             "sort": "0",
             "totalPage": f"{totalPage}"
         }
-        time.sleep(utils.gParas.wait_time)
         premiumPage = postHtml(url="http://item.gmarket.co.kr/Review/Premium", data=nextPagePayload,
                                headers=utils.gParas.headers)
+
+        if premiumPage==utils.gParas.isTour or premiumPage==utils.gParas.isNoItem:
+            raise UnWantedGSException
 
         if premiumPage is None and page < totalPage:
             logging.warning(f"get NONE {goodsCode}'s premium page before pages end")
@@ -210,8 +226,7 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
             break
 
         if utils.gParas.isDebug:
-            if page == 4:
-                break
+            pass
     mydb.close()
 
 
@@ -250,6 +265,9 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
     page = 1
     commonPage = postHtml(url="http://item.gmarket.co.kr/Review", data={"goodsCode": f"{goodsCode}"},
                           headers=utils.gParas.headers)
+    if commonPage == utils.gParas.isTour or commonPage == utils.gParas.isNoItem:
+        raise UnWantedGSException
+
     if commonPage is None:
         logging.error(f"no respond for {goodsCode}'s common page")
         raise NoRespondException("commonPage")
@@ -313,8 +331,9 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
                    "pageNo": f"{page}",
                    "totalPage": f"{totalPage}"
                    }
-        time.sleep(utils.gParas.wait_time)
         commonPage = postHtml(url="http://item.gmarket.co.kr/Review/Text", data=payload, headers=utils.gParas.headers)
+        if commonPage == utils.gParas.isNoItem or commonPage == utils.gParas.isTour:
+            raise UnWantedGSException
 
         if commonPage is None and page < totalPage:
             logging.warning(f"get NONE {goodsCode}'s common page before pages end")
@@ -326,6 +345,5 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
             break
 
         if utils.gParas.isDebug:
-            if page == 4:
-                break
+            pass
     mydb.close()

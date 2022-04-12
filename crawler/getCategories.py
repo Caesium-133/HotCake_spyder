@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 from utils.MyException import *
-from utils.gParas import wait_time, mysqlParas,isDebug
+from utils.gParas import wait_time, mysqlParas,isDebug, isTour, isNoItem
 import logging
 import mysql.connector
 from utils.manProxy import getHtml
@@ -21,6 +21,8 @@ debugMethod="time"
 def getAllCategories():
     url = "http://corners.gmarket.co.kr/BestSellers?viewType=C"
     webData = getHtml(url)
+    if webData==isTour or webData==isNoItem:
+        raise UnWantedGSException
     soup = BeautifulSoup(webData, 'lxml')
 
     cateTab = soup.select_one("#categoryTabC")
@@ -48,6 +50,8 @@ def getMediumCategories(data):
     largeCatCode = data["largeCatCode"]
     url = f"http://corners.gmarket.co.kr/BestSellers?viewType=C&largeCategoryCode={largeCatCode}"
     webData = getHtml(url)
+    if webData==isTour or webData==isNoItem:
+        raise UnWantedGSException
     soup = BeautifulSoup(webData, 'lxml')
     catList = soup.select_one("#mediumCategoryListBtnBox")
     if catList is None:
@@ -80,6 +84,8 @@ def getSmallCategories(data):
     sql = "INSERT INTO categories VALUES(%s,%s,%s,%s,%s,%s,%s,%s)"
     url = f"http://corners.gmarket.co.kr/Bestsellers?viewType=C&largeCategoryCode={largeCatCode}&mediumCategoryCode={mediumCatCode}"
     webData = getHtml(url)
+    if webData==isTour or webData==isNoItem:
+        raise UnWantedGSException
     soup = BeautifulSoup(webData, 'lxml')
     catList = soup.select_one("#largeCategoryListBtnBox")
     if catList is None:

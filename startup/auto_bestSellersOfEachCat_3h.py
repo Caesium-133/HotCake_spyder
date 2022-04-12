@@ -8,6 +8,7 @@ from utils.utility import makeDir
 from crawler.getBestSellers import getBestSellersByEachCat
 from utils.MyDecoration import debug
 from utils.gParas import isDebug
+from utils.MyException import UnWantedGSException
 
 if __name__ == "__main__":
     makeDir("./log/bs")
@@ -19,8 +20,10 @@ if __name__ == "__main__":
     #     getBestSellersByEachCat()
     # except:
     #     logging.error("error")
-    
-    getBestSellersByEachCat()
+    try:
+        getBestSellersByEachCat()
+    except UnWantedGSException:
+        pass
 
         
         
