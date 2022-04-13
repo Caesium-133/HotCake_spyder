@@ -1,4 +1,7 @@
 import sys
+
+import utils.gParas
+
 sys.path.append("../")
 import requests
 from bs4 import BeautifulSoup
@@ -33,6 +36,9 @@ def getBestSellersByAll():
     url = "http://corners.gmarket.co.kr/Bestsellers"
 
     webData = getHtml(url)
+    if webData==utils.gParas.isTour or webData==utils.gParas.isNoItem:
+        mydb.close()
+        raise UnWantedGSException
     soup = BeautifulSoup(webData, "lxml")
 
     # driver = webdriver.Chrome()
@@ -111,6 +117,9 @@ def getBestSellersByEachCat():
         time.sleep(wait_time / 2)
         url = f"http://corners.gmarket.co.kr/Bestsellers?viewType=C&largeCategoryCode={lcc[0]}"
         webData = getHtml(url)
+        if webData == utils.gParas.isTour or webData==utils.gParas.isNoItem:
+            mydb.close()
+            raise UnWantedGSException
         soup = BeautifulSoup(webData, "lxml")
 
         if isDebug:

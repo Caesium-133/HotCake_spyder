@@ -6,10 +6,13 @@ import logging
 from crawler.getItemInfo import getItemSummary
 import time
 import mysql.connector
-from utils.utility import makeDir
+from utils.utility import makeDir, getMostRecentlyUpdatedMeasurement
 from utils.gParas import mysqlParas, influxParas
 from influxdb import InfluxDBClient
 from utils.itemsDict import itemInfoSummaryDict
+from utils.MyException import UnWantedGSException
+from tqdm import tqdm
+import utils.gParas
 
 if __name__ == "__main__":
     makeDir("./log/itemSummary")
@@ -22,7 +25,7 @@ if __name__ == "__main__":
         host=influxParas["host"],
         username=influxParas["user"],
         password=influxParas["password"],
-        database="ItemSummaries"
+        database="itemSummary"
     )
 
     mydb = mysql.connector.connect(
@@ -32,19 +35,29 @@ if __name__ == "__main__":
         database="spyder"
     )
     mycursor = mydb.cursor()
-    sql = "SELECT goodsCode FROM allGoodsCode"
-    mycursor.execute(sql)
+    #interuptGC = getMostRecentlyUpdatedMeasurement()
+    interuptGC = "1738788802"
+    limitsql = f" limit {utils.gParas.updateItemNumOnceOfInfo}" if utils.gParas.updateItemNumOnceOfInfo != 0 else ""
+    startSql = f" where id <= (select id from allGoodsCode where goodsCode = {interuptGC} limit 1) " if interuptGC else ""
+    orderBySql = " ORDER BY id desc "
+    querySql = "SELECT DISTINCT goodsCode FROM allGoodsCode" + startSql + orderBySql + limitsql
+    mycursor.execute(querySql)
     gcs = mycursor.fetchall()  # gcs is a list of tuples
     mydb.close()
 
-    for gct in gcs:
+    for gct in tqdm(gcs):
         goodsCode = gct[0]
         itemInfoSummary=itemInfoSummaryDict.copy()
         try:
             getItemSummary(goodsCode, itemInfoSummary)
-        except:
-            logging.warning(f"skipping {goodsCode}")
+        except UnWantedGSException:
+            logging.info(f"{goodsCode} is unwanted")
+            mycursor.execute("delete from allGoodsCode where goodsCode=%s",(goodsCode,))
+            mydb.commit()
             continue
+        except Exception as e:
+            print(f"{goodsCode} meets error:")
+            raise e
         json_itemSummary=[
             {
                 "measurement":f"gc{goodsCode}",

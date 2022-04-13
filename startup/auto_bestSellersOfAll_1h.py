@@ -8,6 +8,7 @@ from utils.utility import makeDir
 from crawler.getBestSellers import getBestSellersByAll
 from utils.MyDecoration import debug
 from utils.gParas import isDebug
+from utils.MyException import UnWantedGSException
 
 
 if __name__ == "__main__":
@@ -21,7 +22,10 @@ if __name__ == "__main__":
     # except Exception as e:
     #     logging.error("error: ")
     #     raise e
-    getBestSellersByAll()
+    try:
+        getBestSellersByAll()
+    except UnWantedGSException:
+        pass
 
 
 

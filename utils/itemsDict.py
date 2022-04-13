@@ -56,7 +56,8 @@ itemInfoDict = {                ###每7天更新一次
     'publisher':None,           #出版商
     'material':None,
     'size':None,                #大小 20mmx30mm
-    'width':None,               #重量
+    'width':None,               #kuandu
+    'weight':None,              #zhongliang
     'colour':None,              #颜色
     'updateDate':None           #本信息更新时间
     
