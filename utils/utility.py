@@ -73,3 +73,13 @@ def getMostRecentlyUpdatedMeasurement():
             foundLastTime=lt
             foundLastGC=goodsCode
     return foundLastGC
+
+def writeToFile(filename:str,content:str):
+    with open(filename,"w+",encoding='utf-8') as file:
+        file.write(content)
+
+def appendToFile(filename:str,content:str):
+    with open(filename,"a+",encoding='utf-8') as file:
+        file.write(content)
+
+

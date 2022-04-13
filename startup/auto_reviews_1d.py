@@ -55,7 +55,6 @@ if __name__ == "__main__":
         comnum = comnumTL[0][0]
         if isDebug:
             pass
-        
         try:
             print(goodsCode)
             downloadItemReviews(goodsCode=goodsCode, needCommon=True, needPremium=True,alreadyPre=prenum,

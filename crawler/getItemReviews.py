@@ -2,7 +2,7 @@ import sys
 sys.path.append("../")
 from bs4 import BeautifulSoup
 import time
-from utils.utility import getReviewGrade
+from utils.utility import getReviewGrade,writeToFile
 import logging
 from utils.MyException import *
 from retry import retry
@@ -12,6 +12,7 @@ import mysql.connector
 import utils.gParas
 from utils.manProxy import getHtml, postHtml
 from utils.MyDecoration import debug
+
 
 page_interval = 1
 
@@ -135,7 +136,7 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
         database="spyder"
     )
     mycursor = mydb.cursor()
-    sql = "INSERT INTO preniumReview VALUES (%s,%s,%s,%s,%s,%s,%s)"
+    sql = "INSERT INTO premiumReview VALUES (%s,%s,%s,%s,%s,%s,%s)"
 
     # headers = ['reviewTitle', 'reviewGoodsChoice', 'reviewContent', 'reviewerName', 'reviewDate', 'reviewerExp']
 
@@ -187,14 +188,14 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
             reviewDict["reviewerExp"] = reviewerExp.text if reviewerExp else None
             reviewsDictList.append(tuple(reviewDict.values()))
 
-            numThisTime += len(reviewsDictList)
-
+        numThisTime += len(reviews)
         val = reviewsDictList
-        try:
-            mycursor.execute(sql, val)
-        except:
-            mydb.rollback()
-            logging.info("mysql error")
+        # try:
+        #     mycursor.execute(sql, val)
+        # except:
+        #     mydb.rollback()
+        #     logging.info("mysql error")
+        mycursor.executemany(sql, val)
         mydb.commit()
 
         # with open(f"./reviews/{goodsCode}_premium.csv", "a", newline='', encoding='utf-8') as file:
@@ -243,7 +244,7 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
     if hmCRp == -1:
         hmCRp = totalPage
 
-    headers = ['goodsGrade', 'deliveryGrade', 'reviewGoodsChoice', 'reviewContent', 'reviewerName', 'reviewDate']
+    # headers = ['goodsGrade', 'deliveryGrade', 'reviewGoodsChoice', 'reviewContent', 'reviewerName', 'reviewDate']
 
     # if update==0:
     #     with open(f"./reviews/{goodsCode}_common.csv", "w", newline='', encoding='utf-8') as file:
@@ -260,7 +261,7 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
         database="spyder"
     )
     mycursor = mydb.cursor()
-    sql = "INSERT INTO preniumReview VALUES (%s,%s,%s,%s,%s,%s,%s)"
+    sql = "INSERT INTO commonReview VALUES (%s,%s,%s,%s,%s,%s,%s)"
 
     page = 1
     commonPage = postHtml(url="http://item.gmarket.co.kr/Review", data={"goodsCode": f"{goodsCode}"},
@@ -310,14 +311,16 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
 
             reviewsDictList.append(tuple(reviewDict.values()))
 
-            numThisTime += len(reviewsDictList)
+        numThisTime += len(reviews)
 
         val = reviewsDictList
-        try:
-            mycursor.execute(sql, val)
-        except:
-            mydb.rollback()
-            logging.info("mysql error")
+        # try:
+        #     mycursor.execute(sql, val)
+        # except:
+        #     mydb.rollback()
+        #     logging.info("mysql error")
+
+        mycursor.executemany(sql, val)
         mydb.commit()
 
         # with open(f"./reviews/{goodsCode}_common.csv", "a", newline='', encoding='utf-8') as file:
@@ -332,6 +335,7 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
                    "totalPage": f"{totalPage}"
                    }
         commonPage = postHtml(url="http://item.gmarket.co.kr/Review/Text", data=payload, headers=utils.gParas.headers)
+
         if commonPage == utils.gParas.isNoItem or commonPage == utils.gParas.isTour:
             raise UnWantedGSException
 

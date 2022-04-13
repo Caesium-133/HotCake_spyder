@@ -6,6 +6,7 @@ itemReviewInfo = {              ###几乎整合到了ITEM SUMMERY中
 }
 
 premiumReview = {               ###每天爬取一次
+    'goodsCode': None,
     'reviewTitle': None,        #评论标题
     'reviewGoodsChoice': None,  #评论商品选项
     'reviewContent': None,      #评论内容
@@ -15,6 +16,7 @@ premiumReview = {               ###每天爬取一次
 }
 
 commonReview = {                ###每天爬取一次
+    'goodsCode': None,
     'goodsGrade': None,         #对商品的评分abcd
     'deliveryGrade': None,      #对邮递的评分abcd
     'reviewGoodsChoice': None,  #评论商品选项
@@ -49,7 +51,7 @@ itemInfoDict = {                ###每7天更新一次
     'brand': None,              #品牌
     'source': None,             #产地
     'productAndModelName': None,#产品和型号
-    'ManufacturerNImporter': None,#制造商和进口商
+    'ManufacturerNImporter': None,  #制造商和进口商
     'countryOfManufacture':None,#生产国
     'bookName':None,            #书名/专辑名
     'author':None,              #作者
@@ -60,8 +62,8 @@ itemInfoDict = {                ###每7天更新一次
     'weight':None,              #zhongliang
     'colour':None,              #颜色
     'updateDate':None           #本信息更新时间
-    
 }
+
 itemInfoSummaryDict={               ###每小时爬取一次
     'goodsCode':None,
     'price':None,

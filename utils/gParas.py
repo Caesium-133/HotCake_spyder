@@ -25,8 +25,8 @@ influxParas = {
     "password": "123456"
 }
 
-shallowCRp = 1200  # 一次取某商品一般评论数
-shallowPRp = 1200  # 一次取某商品高级评论数
+shallowCRp = 1200  # 一次取某商品一般评论页数
+shallowPRp = 1200  # 一次取某商品高级评论页数
 
 updateItemNumOnceOfInfo = 0  # 一次更新多少个商品的信息
 updateItemNumOnceOfReviews = 0  # 一次更新多少个商品的评论
