@@ -12,7 +12,6 @@ from utils.manProxy import getHtml, postHtml
 from utils.MyDecoration import debug
 from retry import retry
 
-
 debugMethod = "time"
 
 
@@ -105,9 +104,14 @@ def getItemInfo(goodsCode, itemInfo):
     for cat in cats:
         catName = cat.find("a")
         itemInfo[f"cat_{i}"] = catName.text.replace(",", "/") if catName else None
-        if catName and i > 1:
-            catLink = catName.get("href")
-            catCode = catLink.split("=")[-1]
+        if catName:
+            catCode = ""
+            if i == 1:
+                catLink = catName.get("href")
+                catCode = re.findall("\d+", catLink)[-1]
+            if i > 1:
+                catLink = catName.get("href")
+                catCode = catLink.split("=")[-1]
             itemInfo[f"cat_{i}_code"] = catCode
         i += 1
 
