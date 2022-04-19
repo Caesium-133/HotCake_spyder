@@ -39,6 +39,8 @@ itemInfoDict = {                ###每7天更新一次
     'cat_4_code':None,
     'isBest': None,             #是否是"best"商品
     'isOfficial': None,         #是否是"official"商品
+    'isSmileDelivery':None,
+    'isExpressShop':None,
     'isSoldOut': None,          #是否售罄
     'realPrice': None,          #真实价格（现价）
     'originalPrice': None,      #原始价格
