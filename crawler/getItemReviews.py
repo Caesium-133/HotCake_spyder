@@ -83,10 +83,10 @@ def downloadItemReviews(goodsCode, needPremium=True, needCommon=True, alreadyPre
             logging.info(f"{goodsCode} has no pr reviews")
         else:
             try:
-                # pt = threading.Thread(target=downloadPremiumReview, args=(
-                #     goodsCode, premiumReviewNum, PremiumReviewsPerPage, int(premiumReviewNum - alreadyPre) + 1, hmPRp))
-                # pt.start()
-                downloadPremiumReview(goodsCode=goodsCode, totalNum=premiumReviewNum, numPerPage=PremiumReviewsPerPage,update=int(premiumReviewNum-alreadyPre)+1,hmPRp=hmPRp)
+                pt = threading.Thread(target=downloadPremiumReview, args=(
+                    goodsCode, premiumReviewNum, PremiumReviewsPerPage, int(premiumReviewNum - alreadyPre) + 1, hmPRp))
+                pt.start()
+                # downloadPremiumReview(goodsCode=goodsCode, totalNum=premiumReviewNum, numPerPage=PremiumReviewsPerPage,update=int(premiumReviewNum-alreadyPre)+1,hmPRp=hmPRp)
             except UnableToDealException:
                 logging.warning(f"unable to deal something when downloading {goodsCode}'s premium reviews")
             except NoRespondException:
@@ -102,10 +102,10 @@ def downloadItemReviews(goodsCode, needPremium=True, needCommon=True, alreadyPre
             logging.info(f"{goodsCode} has no cm reviews")
         else:
             try:
-                # ct = threading.Thread(target=downloadCommonReviews, args=(
-                #     goodsCode, commonReviewNum, CommonReviewsPerPage, int(commonReviewNum - alreadyCom) + 1, hmCRp))
-                # ct.start()
-                downloadCommonReviews(goodsCode=goodsCode,totalNum=commonReviewNum,numPerPage=CommonReviewsPerPage,update=int(commonReviewNum-alreadyCom)+1,hmCRp=hmCRp)
+                ct = threading.Thread(target=downloadCommonReviews, args=(
+                    goodsCode, commonReviewNum, CommonReviewsPerPage, int(commonReviewNum - alreadyCom) + 1, hmCRp))
+                ct.start()
+                # downloadCommonReviews(goodsCode=goodsCode,totalNum=commonReviewNum,numPerPage=CommonReviewsPerPage,update=int(commonReviewNum-alreadyCom)+1,hmCRp=hmCRp)
             except UnableToDealException:
                 logging.warning(f"unable to deal something when downloading {goodsCode}'s common reviews")
             except NoRespondException:
