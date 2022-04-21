@@ -62,17 +62,20 @@ def downloadItemReviews(goodsCode, needPremium=True, needCommon=True, alreadyPre
     itemReviews["premiumReviewNum"] = premiumReviewNum
     itemReviews["commonReviewNum"] = commonReviewNum
 
-    ps = soup.find_all("p", class_="comment-tit")
-    if ps is None:
-        logging.error(f"found no premium review per page for {goodsCode}")
-        raise RetryMayWorkException("noPReviewPerPage")
-    tds = soup.find_all("td", class_="comment-grade")
-    if tds is None:
-        logging.error(f"found no common review per page for {goodsCode}")
-        raise RetryMayWorkException("noCReviewPerPage")
+    # ps = soup.find_all("p", class_="comment-tit")
+    # if ps is None:
+    #     logging.error(f"found no premium review per page for {goodsCode}")
+    #     raise RetryMayWorkException("noPReviewPerPage")
+    # tds = soup.find_all("td", class_="comment-grade")
+    # if tds is None:
+    #     logging.error(f"found no common review per page for {goodsCode}")
+    #     raise RetryMayWorkException("noCReviewPerPage")
+    #
+    # PremiumReviewsPerPage = len(ps)
+    # CommonReviewsPerPage = len(tds)
 
-    PremiumReviewsPerPage = len(ps)
-    CommonReviewsPerPage = len(tds)
+    PremiumReviewsPerPage=5
+    CommonReviewsPerPage=10
 
     if needPremium:
         if premiumReviewNum==0:
@@ -173,6 +176,9 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
         for review in reviews:
             reviewDict = premiumReview.copy()
             reviewDetails = review.find("td", class_="comment-content")
+            if reviewDetails is None:
+                # logging.warning(f"{goodsCode}'s {page}p has no reviewDetails")
+                raise WeNeedCheckException(f"{goodsCode}'s {page}p has no reviewDetails")
             reviewDict["goodsCode"] = goodsCode
             reviewDict["reviewTitle"] = reviewDetails.find("p", class_="comment-tit").text.replace(",", " ")
             reviewDict["reviewGoodsChoice"] = reviewDetails.find("p", class_="pd-tit").text.replace(",", " ")
@@ -219,11 +225,12 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
 
         if premiumPage is None and page < totalPage:
             logging.warning(f"get NONE {goodsCode}'s premium page before pages end")
+            raise NoRespondException(f"{goodsCode}'s page {page} has no premiumPage")
 
         if numThisTime > update:
             break
 
-        if page > hmPRp:
+        if page > hmPRp or page > totalPage:
             break
 
         if utils.gParas.isDebug:
@@ -341,11 +348,12 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
 
         if commonPage is None and page < totalPage:
             logging.warning(f"get NONE {goodsCode}'s common page before pages end")
+            raise NoRespondException(f"{goodsCode}'s page {page} has no premiumPage")
 
         if numThisTime > update:
             break
 
-        if page > hmCRp:
+        if page > hmCRp or page > totalPage:
             break
 
         if utils.gParas.isDebug:

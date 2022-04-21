@@ -26,86 +26,9 @@ date = time.strftime("%Y-%m-%d", time.localtime())
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 logging.basicConfig(filename=f"./testLog/logging{date}.log", format=LOG_FORMAT, level=logging.INFO)
 
-mydb = mysql.connector.connect(
-        host=utils.gParas.mysqlParas["host"],
-        user=utils.gParas.mysqlParas["user"],
-        passwd=utils.gParas.mysqlParas["passwd"],
-        database="spyder"
-    )
-mycursor = mydb.cursor()
-querySql="SELECT goodsCode FROM itemInfo WHERE LENGTH(cat_2_code)<8"
-mycursor.execute(querySql)
-gcs = mycursor.fetchall()
+downloadItemReviews(goodsCode=1760247710, needCommon=True, needPremium=True,alreadyPre=0,
+                                alreadyCom=0,hmCRp=1200,hmPRp=1200)
 
-headers = ["goodsCode","isSmileDelivery","isExpressShop"]
-for i in range(0,4):
-    headers.append(f"cat_{i}")
-    headers.append(f"cat_{i}_code")
-
-with open(f"./shortCode.csv", "w", newline='', encoding='utf-8') as file:
-    if file is None:
-        logging.critical("unable to open or write into review file")
-    writer = csv.DictWriter(file, fieldnames=headers)
-    writer.writeheader()
-#cdl=[]
-for gc in gcs:
-    goodsCode = gc[0]
-    print(goodsCode)
-    url = utils.gParas.itemUrl + f"{goodsCode}"
-    catDict={}
-    catDict["goodsCode"] = goodsCode
-    catDict["isSmileDelivery"]=False
-    catDict["isExpressShop"]=False
-
-    webData = getHtml(url)
-    if webData == isTour or webData == isNoItem:
-        raise UnWantedGSException
-    if webData is None:
-        logging.error(f"no info respond for {goodsCode}")
-        raise NoRespondException("InfoPage")
-    soup = BeautifulSoup(webData, 'lxml')
-
-    navi = soup.find("div", class_="location-navi")
-    if navi is None:
-        logging.error(f"no navi bar for {goodsCode}")
-        raise WeNeedCheckException("noNaviBar")
-    cats = navi.select("li")
-    i = 0
-    for cat in cats:
-        catName = cat.find("a")
-        catDict[f"cat_{i}"] = catName.text.replace(",", "/") if catName else None
-        if catName:
-            catCode = ""
-            try:
-                catLink = catName.get("href")
-                try:
-                    if catLink.find("SmileDelivery") > -1:
-                        catDict["isSmileDelivery"] = True
-                    if catLink.find("ExpressShop") > -1:
-                        catDict["isExpressShop"] = True
-                except:
-                    pass
-            except:
-                logging.info(f"{goodsCode} has no cat")
-                break
-            try:
-                if i==1:
-                    catCode = re.findall("\d+", catLink)[-1]
-                if i>1:
-                    catCode=catLink.split("=")[-1]
-            except:
-                logging.info(f"{goodsCode} has less than 3 cats")
-            finally:
-                catDict[f"cat_{i}_code"] = catCode
-        i += 1
-    # cdl.append(catDict)
-    with open(f"./shortCode.csv", "a", newline='', encoding='utf-8') as file:
-        if file is None:
-            logging.error("unable to append into review file")
-        writer = csv.DictWriter(file, fieldnames=headers)
-        writer.writerow(catDict)
-
-mydb.close()
 
 
 
