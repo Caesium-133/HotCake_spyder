@@ -12,6 +12,7 @@ import mysql.connector
 import utils.gParas
 from utils.manProxy import getHtml, postHtml
 from utils.MyDecoration import debug
+import math
 
 
 page_interval = 1
@@ -82,10 +83,10 @@ def downloadItemReviews(goodsCode, needPremium=True, needCommon=True, alreadyPre
             logging.info(f"{goodsCode} has no pr reviews")
         else:
             try:
-                pt = threading.Thread(target=downloadPremiumReview, args=(
-                    goodsCode, premiumReviewNum, PremiumReviewsPerPage, int(premiumReviewNum - alreadyPre) + 1, hmPRp))
-                # downloadPremiumReview(goodsCode=goodsCode, totalNum=premiumReviewNum, numPerPage=PremiumReviewsPerPage,update=int(premiumReviewNum-alreadyPre)+1)
-                pt.start()
+                # pt = threading.Thread(target=downloadPremiumReview, args=(
+                #     goodsCode, premiumReviewNum, PremiumReviewsPerPage, int(premiumReviewNum - alreadyPre) + 1, hmPRp))
+                # pt.start()
+                downloadPremiumReview(goodsCode=goodsCode, totalNum=premiumReviewNum, numPerPage=PremiumReviewsPerPage,update=int(premiumReviewNum-alreadyPre)+1,hmPRp=hmPRp)
             except UnableToDealException:
                 logging.warning(f"unable to deal something when downloading {goodsCode}'s premium reviews")
             except NoRespondException:
@@ -101,10 +102,10 @@ def downloadItemReviews(goodsCode, needPremium=True, needCommon=True, alreadyPre
             logging.info(f"{goodsCode} has no cm reviews")
         else:
             try:
-                ct = threading.Thread(target=downloadCommonReviews, args=(
-                    goodsCode, commonReviewNum, CommonReviewsPerPage, int(commonReviewNum - alreadyCom) + 1, hmCRp))
-                # downloadCommonReviews(goodsCode=goodsCode,totalNum=commonReviewNum,numPerPage=CommonReviewsPerPage,update=int(commonReviewNum-alreadyCom)+1)
-                ct.start()
+                # ct = threading.Thread(target=downloadCommonReviews, args=(
+                #     goodsCode, commonReviewNum, CommonReviewsPerPage, int(commonReviewNum - alreadyCom) + 1, hmCRp))
+                # ct.start()
+                downloadCommonReviews(goodsCode=goodsCode,totalNum=commonReviewNum,numPerPage=CommonReviewsPerPage,update=int(commonReviewNum-alreadyCom)+1,hmCRp=hmCRp)
             except UnableToDealException:
                 logging.warning(f"unable to deal something when downloading {goodsCode}'s common reviews")
             except NoRespondException:
@@ -127,7 +128,7 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
     if totalNum == 0:
         logging.info("no reviews, return")
         return
-    totalPage = int(totalNum / numPerPage) + 1
+    totalPage = math.ceil(totalNum / numPerPage)
     if hmPRp == -1:
         hmPRp = totalPage
 
@@ -247,7 +248,7 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
     if totalNum == 0:
         logging.info("no reviews, return")
         return
-    totalPage = int(totalNum / numPerPage) + 1
+    totalPage = math.ceil(totalNum / numPerPage)
     if hmCRp == -1:
         hmCRp = totalPage
 

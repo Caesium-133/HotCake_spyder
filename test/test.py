@@ -26,7 +26,7 @@ date = time.strftime("%Y-%m-%d", time.localtime())
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 logging.basicConfig(filename=f"./testLog/logging{date}.log", format=LOG_FORMAT, level=logging.INFO)
 
-downloadItemReviews(goodsCode=1760247710, needCommon=True, needPremium=True,alreadyPre=0,
+downloadItemReviews(goodsCode=2023402985, needCommon=True, needPremium=True,alreadyPre=0,
                                 alreadyCom=0,hmCRp=1200,hmPRp=1200)
 
 

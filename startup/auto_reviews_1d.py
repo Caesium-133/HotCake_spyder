@@ -29,7 +29,7 @@ if __name__ == "__main__":
         database="spyder"
     )
     mycursor = mydb.cursor()
-    interuptGC = "1760247710"
+    interuptGC = ""
     limitsql = f" limit {updateItemNumOnceOfReviews}" if updateItemNumOnceOfReviews != 0 else ""
     startSql = f" where id <= (select id from allGoodsCode where goodsCode = {interuptGC} limit 1) " if interuptGC else ""
     orderBySql = " ORDER BY id desc "
