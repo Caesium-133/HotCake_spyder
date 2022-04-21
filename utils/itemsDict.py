@@ -39,12 +39,12 @@ itemInfoDict = {                ###每7天更新一次
     'cat_4_code':None,
     'isBest': None,             #是否是"best"商品
     'isOfficial': None,         #是否是"official"商品
-    'isSmileDelivery':None,
-    'isExpressShop':None,
+    'isSmileDelivery':None,     #是否是"SmileDelivery"商品
+    'isExpressShop':None,       #是否是"ExpressShop"商品
     'isSoldOut': None,          #是否售罄
     'realPrice': None,          #真实价格（现价）
     'originalPrice': None,      #原始价格
-    'coupon': None,             #优惠券优惠值 如15%
+    'coupon': None,             #优惠券优惠值 如15%或2000韩元
     'shopTitle': None,          #店名
     'isPowerDealer': None,      #店铺是否是"power dealer"
     'isInterestShop': None,     #店铺是否是"interest shop"

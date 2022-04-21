@@ -37,23 +37,25 @@ querySql="SELECT goodsCode FROM itemInfo WHERE LENGTH(cat_2_code)<8"
 mycursor.execute(querySql)
 gcs = mycursor.fetchall()
 
-headers = ["goodsCode"]
+headers = ["goodsCode","isSmileDelivery","isExpressShop"]
 for i in range(0,4):
     headers.append(f"cat_{i}")
     headers.append(f"cat_{i}_code")
 
-with open(f"./smileDelivery.csv", "w", newline='', encoding='utf-8') as file:
+with open(f"./shortCode.csv", "w", newline='', encoding='utf-8') as file:
     if file is None:
         logging.critical("unable to open or write into review file")
     writer = csv.DictWriter(file, fieldnames=headers)
     writer.writeheader()
-cdl=[]
+#cdl=[]
 for gc in gcs:
     goodsCode = gc[0]
     print(goodsCode)
     url = utils.gParas.itemUrl + f"{goodsCode}"
     catDict={}
     catDict["goodsCode"] = goodsCode
+    catDict["isSmileDelivery"]=False
+    catDict["isExpressShop"]=False
 
     webData = getHtml(url)
     if webData == isTour or webData == isNoItem:
@@ -75,25 +77,33 @@ for gc in gcs:
         if catName:
             catCode = ""
             try:
-                if i == 1:
-                    catLink = catName.get("href")
+                catLink = catName.get("href")
+                try:
+                    if catLink.find("SmileDelivery") > -1:
+                        catDict["isSmileDelivery"] = True
+                    if catLink.find("ExpressShop") > -1:
+                        catDict["isExpressShop"] = True
+                except:
+                    pass
+            except:
+                logging.info(f"{goodsCode} has no cat")
+                break
+            try:
+                if i==1:
                     catCode = re.findall("\d+", catLink)[-1]
-                if i > 1:
-                    catLink = catName.get("href")
-                    catCode = catLink.split("=")[-1]
+                if i>1:
+                    catCode=catLink.split("=")[-1]
             except:
                 logging.info(f"{goodsCode} has less than 3 cats")
-                break
             finally:
                 catDict[f"cat_{i}_code"] = catCode
         i += 1
     # cdl.append(catDict)
-    with open(f"./smileDelivery.csv", "a", newline='', encoding='utf-8') as file:
+    with open(f"./shortCode.csv", "a", newline='', encoding='utf-8') as file:
         if file is None:
             logging.error("unable to append into review file")
         writer = csv.DictWriter(file, fieldnames=headers)
         writer.writerow(catDict)
-
 
 mydb.close()
 

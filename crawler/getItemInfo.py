@@ -107,21 +107,24 @@ def getItemInfo(goodsCode, itemInfo):
         if catName:
             catCode = ""
             try:
-                if catName.text.find("SmileDelivery"):
-                    itemInfo["isSmileDelivery"]=True
-                if catName.text.find("ExpressShop"):
-                    itemInfo["isExpressShop"]=True
+                catLink = catName.get("href")
+                try:
+                    if catLink.find("SmileDelivery") > -1:
+                        itemInfo["isSmileDelivery"] = True
+                    if catLink.find("ExpressShop") > -1:
+                        itemInfo["isExpressShop"] = True
+                except:
+                    pass
             except:
-                pass
+                logging.info(f"{goodsCode} has no cat")
+                break
             try:
                 if i == 1:
-                    catLink = catName.get("href")
                     catCode = re.findall("\d+", catLink)[-1]
                 if i > 1:
-                    catLink = catName.get("href")
                     catCode = catLink.split("=")[-1]
             except:
-                break
+                logging.info(f"{goodsCode} has less than 3 cats")
             finally:
                 itemInfo[f"cat_{i}_code"] = catCode
         i += 1
