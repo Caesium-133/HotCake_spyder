@@ -23,11 +23,13 @@ if __name__ == "__main__":
     mydb = mysql.connector.connect(
         host=mysqlParas["host"],
         user=mysqlParas["user"],
+        port="35687",
         passwd=mysqlParas["passwd"],
-        database="spyder"
+        database="spyder",
+        auth_plugin = 'mysql_native_password'
     )
     mycursor = mydb.cursor()
-    interuptGC = "2302137320"
+    interuptGC = "1668465307"
     limitsql = f" limit {utils.gParas.updateItemNumOnceOfInfo}" if utils.gParas.updateItemNumOnceOfInfo != 0 else ""
     startSql = f" where id <= (select id from allGoodsCode where goodsCode = {interuptGC} limit 1) " if interuptGC else ""
     orderBySql = " ORDER BY id desc "
@@ -35,12 +37,13 @@ if __name__ == "__main__":
     insertSql = "INSERT INTO itemInfo VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s," \
                 "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s," \
                 "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s," \
-                "%s,%s,%s,%s,%s,%s)"
+                "%s,%s,%s,%s,%s,%s,%s,%s)"
 
     mycursor.execute(querySql)
     gcs = mycursor.fetchall()
-    for gc in tqdm(gcs):
+    for gc in gcs:
         goodsCode = gc[0]
+        print(goodsCode)
         itemInfo = itemInfoDict.copy()
         try:
             getItemInfo(goodsCode=goodsCode, itemInfo=itemInfo)
@@ -54,6 +57,8 @@ if __name__ == "__main__":
             raise e
 
         val = tuple(itemInfo.values())
+
+
 
         logging.info(f"inserting {goodsCode}'s")
         mycursor.execute(insertSql, val)

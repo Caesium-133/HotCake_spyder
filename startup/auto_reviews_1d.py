@@ -25,6 +25,7 @@ if __name__ == "__main__":
     mydb = mysql.connector.connect(
         host=mysqlParas["host"],
         user=mysqlParas["user"],
+        port="35687",
         passwd=mysqlParas["passwd"],
         database="spyder"
     )

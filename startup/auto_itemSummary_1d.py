@@ -31,19 +31,19 @@ if __name__ == "__main__":
     mydb = mysql.connector.connect(
         host=mysqlParas["host"],
         user=mysqlParas["user"],
+        port="35687",
         passwd=mysqlParas["passwd"],
         database="spyder"
     )
     mycursor = mydb.cursor()
     #interuptGC = getMostRecentlyUpdatedMeasurement()
-    interuptGC = "1738788802"
+    interuptGC = ""
     limitsql = f" limit {utils.gParas.updateItemNumOnceOfInfo}" if utils.gParas.updateItemNumOnceOfInfo != 0 else ""
     startSql = f" where id <= (select id from allGoodsCode where goodsCode = {interuptGC} limit 1) " if interuptGC else ""
     orderBySql = " ORDER BY id desc "
     querySql = "SELECT DISTINCT goodsCode FROM allGoodsCode" + startSql + orderBySql + limitsql
     mycursor.execute(querySql)
     gcs = mycursor.fetchall()  # gcs is a list of tuples
-    mydb.close()
 
     for gct in tqdm(gcs):
         goodsCode = gct[0]
@@ -77,5 +77,8 @@ if __name__ == "__main__":
         influxClient.write_points(json_itemSummary)
     
     influxClient.close()
+    mydb.close()
+
+##
 
     

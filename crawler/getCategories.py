@@ -73,6 +73,7 @@ def getSmallCategories(data):
     mydb = mysql.connector.connect(
         host=mysqlParas["host"],
         user=mysqlParas["user"],
+        port=mysqlParas["port"],
         passwd=mysqlParas["passwd"],
         database="spyder"
     )

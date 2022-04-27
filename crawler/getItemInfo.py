@@ -126,7 +126,8 @@ def getItemInfo(goodsCode, itemInfo):
             except:
                 logging.info(f"{goodsCode} has less than 3 cats")
             finally:
-                itemInfo[f"cat_{i}_code"] = catCode
+                if i > 0:
+                    itemInfo[f"cat_{i}_code"] = catCode
         i += 1
 
     isBest = True if soup.select_one("span.box__category-best") else False
