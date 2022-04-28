@@ -17,6 +17,7 @@ from utils.utility import makeDir
 from utils.gParas import isTour,isNoItem
 from utils.MyException import UnWantedGSException,UnableToDealException,NoRespondException,WeNeedCheckException
 import csv
+from utils.itemsDict import itemInfoDict
 
 from utils.utility import getMostRecentlyUpdatedMeasurement
 from crawler.getItemReviews import downloadItemReviews
@@ -26,9 +27,8 @@ date = time.strftime("%Y-%m-%d", time.localtime())
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 logging.basicConfig(filename=f"./testLog/logging{date}.log", format=LOG_FORMAT, level=logging.INFO)
 
-downloadItemReviews(goodsCode=2023402985, needCommon=True, needPremium=True,alreadyPre=0,
-                                alreadyCom=0,hmCRp=1200,hmPRp=1200)
 
+print(len(itemInfoDict.keys()))
 
 
 

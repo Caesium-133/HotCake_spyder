@@ -186,28 +186,32 @@ def getItemInfo(goodsCode, itemInfo):
     # sib = requests.post(url="http://item.gmarket.co.kr/Shop/ShopInfo", data=getSIpayload)
     # with open("test.html","w",encoding="utf-8") as file:
     #     file.write(sib.text)
-    if sib == isTour or sib == isNoItem:
-        raise UnWantedGSException
-    sibSoup = BeautifulSoup(sib, 'lxml')
+    if sib is not None:
+        if sib == isTour or sib == isNoItem:
+            raise UnWantedGSException
 
-    shopInfoBox = sibSoup.select_one("div.shop-infobox")
-    if shopInfoBox is None:
-        logging.warning(f"no response for {goodsCode}'s shop info box")
-        itemInfo["shopTitle"] = None
-        itemInfo["isPowerDealer"] = False
-        itemInfo["isInterestShop"] = False
-    else:
-        shopTitle = shopInfoBox.strong.a
-        itemInfo["shopTitle"] = shopTitle.get_text() if shopTitle else None
-        sellerAwards = shopInfoBox.select_one("p.seller-awards")
-        if sellerAwards is None:
+        if type(sib)!=str:
+            sib=sib.text
+        sibSoup = BeautifulSoup(sib, 'lxml')
+
+        shopInfoBox = sibSoup.select_one("div.shop-infobox")
+        if shopInfoBox is None:
+            logging.warning(f"no response for {goodsCode}'s shop info box")
+            itemInfo["shopTitle"] = None
             itemInfo["isPowerDealer"] = False
             itemInfo["isInterestShop"] = False
         else:
-            isPD = sellerAwards.find("span", class_="power-dealer")
-            itemInfo["isPowerDealer"] = True if isPD else False
-            isIS = sellerAwards.find("span", href="#tooltip_bestseller")
-            itemInfo["isInterestShop"] = True if isIS else False
+            shopTitle = shopInfoBox.strong.a
+            itemInfo["shopTitle"] = shopTitle.get_text() if shopTitle else None
+            sellerAwards = shopInfoBox.select_one("p.seller-awards")
+            if sellerAwards is None:
+                itemInfo["isPowerDealer"] = False
+                itemInfo["isInterestShop"] = False
+            else:
+                isPD = sellerAwards.find("span", class_="power-dealer")
+                itemInfo["isPowerDealer"] = True if isPD else False
+                isIS = sellerAwards.find("span", href="#tooltip_bestseller")
+                itemInfo["isInterestShop"] = True if isIS else False
 
     productInfoBox = soup.select_one("div.box__product-notice-list")
     if productInfoBox is None:

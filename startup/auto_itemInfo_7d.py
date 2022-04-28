@@ -29,7 +29,7 @@ if __name__ == "__main__":
         auth_plugin = 'mysql_native_password'
     )
     mycursor = mydb.cursor()
-    interuptGC = "1668465307"
+    interuptGC = "2364693349"
     limitsql = f" limit {utils.gParas.updateItemNumOnceOfInfo}" if utils.gParas.updateItemNumOnceOfInfo != 0 else ""
     startSql = f" where id <= (select id from allGoodsCode where goodsCode = {interuptGC} limit 1) " if interuptGC else ""
     orderBySql = " ORDER BY id desc "
@@ -67,3 +67,4 @@ if __name__ == "__main__":
     mydb.close()
 
 # https://gtour.gmarket.co.kr/TourV2/Item?GoodsCode=1769279748
+#1255508793
