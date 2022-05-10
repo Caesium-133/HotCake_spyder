@@ -1,8 +1,11 @@
 import sys
+
+from tqdm import tqdm
+
 sys.path.append("../")
 from bs4 import BeautifulSoup
 import time
-from utils.utility import getReviewGrade,writeToFile
+from utils.utility import getReviewGrade,writeToFile,filter_emoji
 import logging
 from utils.MyException import *
 from retry import retry
@@ -33,7 +36,7 @@ def downloadItemReviews(goodsCode, needPremium=True, needCommon=True, alreadyPre
 
     reviewRespond = postHtml(url="http://item.gmarket.co.kr/Review", data=getReviewsPayload, headers=utils.gParas.headers)
     # reviewRespond = requests.post(url="http://item.gmarket.co.kr/Review", data=getReviewsPayload,headers=gParas.headers)
-    if reviewRespond == utils.gParas.isTour or reviewRespond == utils.gParas.isNoItem:
+    if reviewRespond == utils.utility.isTour or reviewRespond == utils.utility.isNoItem:
         raise UnWantedGSException
 
     if reviewRespond is None:
@@ -75,24 +78,35 @@ def downloadItemReviews(goodsCode, needPremium=True, needCommon=True, alreadyPre
     # PremiumReviewsPerPage = len(ps)
     # CommonReviewsPerPage = len(tds)
 
-    PremiumReviewsPerPage=5
-    CommonReviewsPerPage=10
+    PremiumReviewsPerPage=utils.gParas.PremiumReviewsPP
+    CommonReviewsPerPage=utils.gParas.CommonReviewsPP
+
+    PreUpdate=int(premiumReviewNum-alreadyPre)+1
+    ComUpdate=int(commonReviewNum-alreadyCom)+1
+
+    if PreUpdate>hmPRp*PremiumReviewsPerPage:
+        PreUpdate=hmPRp*PremiumReviewsPerPage
+    if ComUpdate>hmCRp*CommonReviewsPerPage:
+        ComUpdate=hmCRp*CommonReviewsPerPage
+
+    itemReviews["hmCRLastTime"] = 0
+    itemReviews["hmPRLastTime"] = 0
 
     if needPremium:
         if premiumReviewNum==0:
             logging.info(f"{goodsCode} has no pr reviews")
         else:
             try:
-                pt = threading.Thread(target=downloadPremiumReview, args=(
-                    goodsCode, premiumReviewNum, PremiumReviewsPerPage, int(premiumReviewNum - alreadyPre) + 1, hmPRp))
-                pt.start()
-                # downloadPremiumReview(goodsCode=goodsCode, totalNum=premiumReviewNum, numPerPage=PremiumReviewsPerPage,update=int(premiumReviewNum-alreadyPre)+1,hmPRp=hmPRp)
+                if utils.gParas.isMultithreading:
+                    pt = threading.Thread(target=downloadPremiumReview, args=(
+                        goodsCode, premiumReviewNum, PremiumReviewsPerPage, PreUpdate, hmPRp,itemReviews))
+                    pt.start()
+                else:
+                    downloadPremiumReview(goodsCode=goodsCode, totalNum=premiumReviewNum, numPerPage=PremiumReviewsPerPage,update=PreUpdate,hmPRp=hmPRp,reviewsSummary=itemReviews)
             except UnableToDealException:
                 logging.warning(f"unable to deal something when downloading {goodsCode}'s premium reviews")
             except NoRespondException:
                 raise UnableToDealException("NoRespond4PremiumReviews")
-            except IOError:
-                raise WeNeedCheckException("writePremiumReviews")
             except threading.ThreadError:
                 raise WeNeedCheckException("thread error")
             except Exception as e:
@@ -102,16 +116,16 @@ def downloadItemReviews(goodsCode, needPremium=True, needCommon=True, alreadyPre
             logging.info(f"{goodsCode} has no cm reviews")
         else:
             try:
-                ct = threading.Thread(target=downloadCommonReviews, args=(
-                    goodsCode, commonReviewNum, CommonReviewsPerPage, int(commonReviewNum - alreadyCom) + 1, hmCRp))
-                ct.start()
-                # downloadCommonReviews(goodsCode=goodsCode,totalNum=commonReviewNum,numPerPage=CommonReviewsPerPage,update=int(commonReviewNum-alreadyCom)+1,hmCRp=hmCRp)
+                if utils.gParas.isMultithreading:
+                    ct = threading.Thread(target=downloadCommonReviews, args=(
+                        goodsCode, commonReviewNum, CommonReviewsPerPage, ComUpdate, hmCRp,itemReviews))
+                    ct.start()
+                else:
+                    downloadCommonReviews(goodsCode=goodsCode,totalNum=commonReviewNum,numPerPage=CommonReviewsPerPage,update=ComUpdate,hmCRp=hmCRp,reviewsSummary=itemReviews)
             except UnableToDealException:
                 logging.warning(f"unable to deal something when downloading {goodsCode}'s common reviews")
             except NoRespondException:
                 raise UnableToDealException("NoRespond4CommonReviews")
-            except IOError:
-                raise WeNeedCheckException("writeCommonReviews")
             except threading.ThreadError:
                 raise WeNeedCheckException("thread error")
             except Exception as e:
@@ -120,9 +134,11 @@ def downloadItemReviews(goodsCode, needPremium=True, needCommon=True, alreadyPre
     return itemReviews
 
 
-@retry(exceptions=NoRespondException, tries=3, delay=2, jitter=(3, 4))
+
+
+@retry(exceptions=(NoRespondException,RetryMayWorkException), tries=3, delay=2, jitter=(3, 4))
 @debug(isDebug=utils.gParas.isDebug,method=debugMethod)
-def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
+def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp, reviewsSummary):
     global page_interval
     logging.info(f"downloading {goodsCode}'s premium reviews")
     if totalNum == 0:
@@ -137,6 +153,7 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
         host=utils.gParas.mysqlParas["host"],
         user=utils.gParas.mysqlParas["user"],
         passwd=utils.gParas.mysqlParas["passwd"],
+        port=utils.gParas.mysqlParas["port"],
         database="spyder"
     )
     mycursor = mydb.cursor()
@@ -155,7 +172,7 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
     premiumPage = postHtml(url="http://item.gmarket.co.kr/Review", data={"goodsCode": f"{goodsCode}"},
                            headers=utils.gParas.headers)
 
-    if premiumPage == utils.gParas.isTour or premiumPage == utils.gParas.isNoItem:
+    if premiumPage == utils.utility.isTour or premiumPage == utils.utility.isNoItem:
         raise UnWantedGSException
 
     if premiumPage is None:
@@ -181,10 +198,9 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
                 # logging.warning(f"{goodsCode}'s {page}p has no reviewDetails")
                 raise WeNeedCheckException(f"{goodsCode}'s {page}p has no reviewDetails")
             reviewDict["goodsCode"] = goodsCode
-            reviewDict["reviewTitle"] = reviewDetails.find("p", class_="comment-tit").text.replace(",", " ")
+            reviewDict["reviewTitle"] = filter_emoji(reviewDetails.find("p", class_="comment-tit").text.replace(",", " "))
             reviewDict["reviewGoodsChoice"] = reviewDetails.find("p", class_="pd-tit").text.replace(",", " ")
-            reviewDict["reviewContent"] = reviewDetails.find("p", class_="con").text.replace(",", " ").replace("\n",
-                                                                                                               " ")
+            reviewDict["reviewContent"] = filter_emoji(reviewDetails.find("p", class_="con").text.replace(",", " ").replace("\n"," "))
             writerInfo = review.find("dl", class_="writer-info")
 
             reviewerName = writerInfo.select_one("dd:nth-child(2)")
@@ -221,7 +237,7 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
         premiumPage = postHtml(url="http://item.gmarket.co.kr/Review/Premium", data=nextPagePayload,
                                headers=utils.gParas.headers)
 
-        if premiumPage==utils.gParas.isTour or premiumPage==utils.gParas.isNoItem:
+        if premiumPage==utils.utility.isTour or premiumPage==utils.utility.isNoItem:
             raise UnWantedGSException
 
         if premiumPage is None and page < totalPage:
@@ -236,12 +252,13 @@ def downloadPremiumReview(goodsCode, totalNum, numPerPage, update, hmPRp):
 
         if utils.gParas.isDebug:
             pass
+    reviewsSummary["hmPRLastTime"] = numThisTime
     mydb.close()
 
 
-@retry(exceptions=NoRespondException, tries=3, delay=2, jitter=(3, 4))
+@retry(exceptions=(NoRespondException,RetryMayWorkException), tries=3, delay=2, jitter=(3, 4))
 @debug(isDebug=utils.gParas.isDebug,method=debugMethod)
-def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
+def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp, reviewsSummary):
     global page_interval
 
     logging.info(f"downloading {goodsCode}'s common reviews")
@@ -266,6 +283,7 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
         host=utils.gParas.mysqlParas["host"],
         user=utils.gParas.mysqlParas["user"],
         passwd=utils.gParas.mysqlParas["passwd"],
+        port=utils.gParas.mysqlParas["port"],
         database="spyder"
     )
     mycursor = mydb.cursor()
@@ -274,7 +292,7 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
     page = 1
     commonPage = postHtml(url="http://item.gmarket.co.kr/Review", data={"goodsCode": f"{goodsCode}"},
                           headers=utils.gParas.headers)
-    if commonPage == utils.gParas.isTour or commonPage == utils.gParas.isNoItem:
+    if commonPage == utils.utility.isTour or commonPage == utils.utility.isNoItem:
         raise UnWantedGSException
 
     if commonPage is None:
@@ -293,23 +311,28 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
 
         reviews = ReviewTable.select("tr")
         for review in reviews:
+            if review.find("td",class_="reple"):
+                continue
+            if "등록된 상품평이 없습니다." in review.find("td").text:
+                break
             reviewDict = commonReview.copy()
             reviewGrade = review.find("td", class_="comment-grade")
 
             reviewDict["goodsCode"] = goodsCode
-            grades = getReviewGrade(reviewGrade)
+            try:
+                grades = getReviewGrade(reviewGrade)
+            except AttributeError:
+                raise RetryMayWorkException("review grade")
             reviewDict["goodsGrade"] = grades["goodsGrade"]
             reviewDict["deliveryGrade"] = grades["deliveryGrade"]
 
             reviewDetails = review.find("td", class_="comment-content")
             reviewGoodsChoice = reviewDetails.find("p", class_="pd-tit")
-            reviewDict["reviewGoodsChoice"] = reviewGoodsChoice.text.replace(",", "").replace("\n", "").replace("\r",
-                                                                                                                "").replace(
-                "\t", "") if reviewGoodsChoice else None
+            reviewDict["reviewGoodsChoice"] = reviewGoodsChoice.text.replace(",", "").replace("\n", "")\
+                                                .replace("\r","").replace("\t", "") if reviewGoodsChoice else None
             reviewContent = reviewDetails.find("p", class_="con")
-            reviewDict["reviewContent"] = reviewContent.text.replace(",", "").replace("\n", "").replace("\r",
-                                                                                                        "").replace(
-                "\t", "") if reviewContent else None
+            reviewDict["reviewContent"] = filter_emoji(reviewContent.text.replace(",", "").replace("\n", "")
+                                                         .replace("\r","").replace("\t", "")) if reviewContent else None
 
             writerInfo = review.find("dl", class_="writer-info")
             reviewerName = writerInfo.select_one("dd:nth-child(2)")
@@ -344,12 +367,12 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
                    }
         commonPage = postHtml(url="http://item.gmarket.co.kr/Review/Text", data=payload, headers=utils.gParas.headers)
 
-        if commonPage == utils.gParas.isNoItem or commonPage == utils.gParas.isTour:
+        if commonPage == utils.utility.isNoItem or commonPage == utils.utility.isTour:
             raise UnWantedGSException
 
         if commonPage is None and page < totalPage:
             logging.warning(f"get NONE {goodsCode}'s common page before pages end")
-            raise NoRespondException(f"{goodsCode}'s page {page} has no premiumPage")
+            break
 
         if numThisTime > update:
             break
@@ -359,4 +382,5 @@ def downloadCommonReviews(goodsCode, totalNum, numPerPage, update, hmCRp):
 
         if utils.gParas.isDebug:
             pass
+    reviewsSummary["hmCRLastTime"] = numThisTime
     mydb.close()

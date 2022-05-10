@@ -2,7 +2,9 @@ itemReviewInfo = {              ###几乎整合到了ITEM SUMMERY中
     "goodsCode": None,          #商品编码
     "totalCount": None,         #评论总数
     "premiumReviewNum": None,   #优质用户的评论数
-    "commonReviewNum": None     #普通用户的评论数
+    "commonReviewNum": None,     #普通用户的评论数
+    "hmCRLastTime":None,
+    "hmPRLastTime":None
 }
 
 premiumReview = {               ###每天爬取一次
@@ -73,5 +75,7 @@ itemInfoSummaryDict={               ###每小时爬取一次
     'reviewsNum':None,
     'premiumReviewsNum':None,
     'commonReviewsNum':None,
-    'isSoldOut':None
+    'isSoldOut':None,
+    'score':None,
+    'payCount':None
 }

@@ -1,5 +1,6 @@
 import requests
 import utils.gParas
+import utils.utility
 from utils.MyException import NoRespondException
 import logging
 import time
@@ -63,7 +64,14 @@ else:
     def checkHtml(webdata: str):
         index = webdata.find("document.location.replace")
         if index > -1:
-            return utils.gParas.isNoItem
+            redirectUrl = re.findall(r"document.location.replace\(\".*?\"\);", webdata)
+            if redirectUrl:
+                url = redirectUrl[0].split("\"")[1]
+                istour = url.find("gtour")
+                if istour > -1:
+                    return utils.utility.isTour
+            else:
+                return utils.utility.isNoItem
         return webdata
 
 

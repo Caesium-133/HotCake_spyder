@@ -3,16 +3,52 @@ import time
 from bs4 import BeautifulSoup
 import requests
 import logging
+
+import utils.gParas
 from utils.MyException import NoRespondException, RetryMayWorkException, WeNeedCheckException, UnWantedGSException
 from utils.utility import getItemInfoString
 import json
-from utils.gParas import wait_time, itemUrl, wait_time_update, isDebug, isTour, isNoItem
+from utils.gParas import wait_time, itemUrl, wait_time_update, isDebug
+from utils.utility import isTour,isNoItem
 from crawler.getItemReviews import downloadItemReviews
 from utils.manProxy import getHtml, postHtml
 from utils.MyDecoration import debug
 from retry import retry
 
+
 debugMethod = "time"
+
+def getScoreNPayCount(goodsCode):
+    scoreR=0
+    paycountR=0
+    baseurl = "https://browse.gmarket.co.kr/search?keyword={}"
+    keyword=goodsCode
+    page=1
+    time.sleep(utils.gParas.wait_time/2)
+    webdata = requests.get(url=baseurl.format(keyword), headers=utils.gParas.headers)
+    soup = BeautifulSoup(webdata.text, 'lxml')
+    result = soup.find("div", class_="box__text-result")
+    if result is None:
+        return None
+    else:
+        informationBoxies = soup.findAll("div", class_="box__information-score")
+        for informationBox in informationBoxies:
+            scoreList = informationBox.find("li", class_="list-item list-item__awards")
+            if scoreList:
+                scoreSpan = scoreList.find("span", class_="for-a11y")
+                if scoreSpan:
+                    score = int(re.findall("\d+", scoreSpan.get_text().replace(",", ""))[0])
+                    scoreR=score
+                    break
+
+            pay_countList = informationBox.find("li", class_="list-item list-item__feedback-count")
+            if pay_countList:
+                pcSpan = pay_countList.find("span", class_="text")
+                if pcSpan:
+                    pc = int(re.findall("\d+", pcSpan.get_text().replace(",", ""))[0])
+                    paycountR=pc
+                    break
+    return scoreR,paycountR
 
 
 @debug(isDebug=isDebug, method=debugMethod)
@@ -65,6 +101,8 @@ def getItemSummary(goodsCode, itemInfoSDict):
     finally:
         itemInfo["coupon"] = p_coupon
 
+
+
     try:
         reviewInfo = downloadItemReviews(goodsCode=goodsCode, needCommon=False, needPremium=False)
         itemInfo["reviewsNum"] = reviewInfo["totalCount"]
@@ -72,6 +110,14 @@ def getItemSummary(goodsCode, itemInfoSDict):
         itemInfo["commonReviewsNum"] = reviewInfo["commonReviewNum"]
     except:
         logging.warning(f"unfulfilled item summary of {goodsCode}")
+
+    try:
+        score,pc=getScoreNPayCount(goodsCode)
+        itemInfo["score"]=score
+        itemInfo["payCount"]=pc
+    except:
+        logging.warning(f"{goodsCode}'s score or pc")
+
 
 
 @debug(isDebug=isDebug, method=debugMethod)
