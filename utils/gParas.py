@@ -21,18 +21,18 @@ headers = {
 }
 
 mysqlParas = {
-    "host": "8.142.74.245",
-    "user": "write",
-    "passwd": "123write456",
-    "port": "35687"
+    "host": "",
+    "user": "",
+    "passwd": "",
+    "port": ""
 }
 
 itemUrl = "http://item.gmarket.co.kr/Item?goodsCode="
 
 influxParas = {
-    "host": "8.142.74.245",
-    "user": "root",
-    "password": "123root456"
+    "host": "",
+    "user": "",
+    "password": ""
 }
 
 shallowCRp = 500  # 一次取某商品一般评论数 10000
